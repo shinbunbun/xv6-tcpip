@@ -11,6 +11,8 @@ struct sleeplock;
 struct stat;
 struct superblock;
 struct timeval;
+struct socket;
+struct sockaddr;
 
 // bio.c
 void            binit(void);
@@ -170,6 +172,10 @@ int             fetchint(uint, int*);
 int             fetchstr(uint, char**);
 void            syscall(void);
 
+// sysfile.c
+int             argfd(int, int*, struct file**);
+int             fdalloc(struct file*);
+
 // time.c
 long            rtcdate2unixtime(struct rtcdate*);
 struct rtcdate* unixtime2rtcdate(long, struct rtcdate*);
@@ -216,6 +222,13 @@ int             net_event_handler(void);
 // net/platform/xv6/driver/e1000.c
 int             e1000init(struct pci_func*);
 void            e1000intr(void);
+
+// net/socket.c
+struct file *   socketalloc(int, int, int);
+int             socketclose(struct socket*);
+int             socketbind(struct socket*, struct sockaddr*, int);
+int             socketrecvfrom(struct socket*, char*, int, struct sockaddr*, int*);
+int             socketsendto(struct socket*, char*, int, struct sockaddr*, int);
 
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))

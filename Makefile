@@ -23,6 +23,7 @@ OBJS = \
 	swtch.o\
 	syscall.o\
 	sysfile.o\
+	syssocket.o\
 	sysproc.o\
 	time.o\
 	trapasm.o\
@@ -40,6 +41,7 @@ OBJS = \
 	net/icmp.o\
 	net/udp.o\
 	net/tcp.o\
+	net/socket.o\
 
 # Cross-compiling (e.g., on Mac OS X)
 # TOOLPREFIX = i386-jos-elf
@@ -193,6 +195,7 @@ UPROGS=\
 	_rm\
 	_sh\
 	_stressfs\
+	_udpecho\
 	_usertests\
 	_wc\
 	_zombie\

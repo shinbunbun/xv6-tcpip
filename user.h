@@ -1,5 +1,6 @@
 struct stat;
 struct rtcdate;
+struct sockaddr;
 
 // system calls
 int fork(void);
@@ -23,6 +24,10 @@ int getpid(void);
 char* sbrk(int);
 int sleep(int);
 int uptime(void);
+int socket(int, int, int);
+int bind(int, struct sockaddr*, int);
+int recvfrom(int, char*, int, struct sockaddr*, int*);
+int sendto(int, char*, int, struct sockaddr*, int);
 
 // ulib.c
 int stat(const char*, struct stat*);
@@ -37,3 +42,8 @@ void* memset(void*, int, uint);
 void* malloc(uint);
 void free(void*);
 int atoi(const char*);
+uint16_t htons(uint16_t);
+uint16_t ntohs(uint16_t);
+uint32_t htonl(uint32_t);
+uint32_t ntohl(uint32_t);
+int inet_pton(int, const char*, void*);

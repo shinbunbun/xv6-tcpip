@@ -77,6 +77,8 @@ fileclose(struct file *f)
     iput(ff.ip);
     end_op();
   }
+  else if(ff.type == FD_SOCKET)
+    socketclose(ff.socket);
 }
 
 // Get metadata about file f.
@@ -154,4 +156,3 @@ filewrite(struct file *f, char *addr, int n)
   }
   panic("filewrite");
 }
-
