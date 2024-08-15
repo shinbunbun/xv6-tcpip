@@ -2,6 +2,7 @@ struct buf;
 struct context;
 struct file;
 struct inode;
+struct pci_func;
 struct pipe;
 struct proc;
 struct rtcdate;
@@ -9,6 +10,7 @@ struct spinlock;
 struct sleeplock;
 struct stat;
 struct superblock;
+struct timeval;
 
 // bio.c
 void            binit(void);
@@ -92,6 +94,10 @@ void            end_op();
 extern int      ismp;
 void            mpinit(void);
 
+// pci.c
+void            pci_func_enable(struct pci_func *f);
+void            pciinit(void);
+
 // picirq.c
 void            picenable(int);
 void            picinit(void);
@@ -167,6 +173,8 @@ void            syscall(void);
 // time.c
 long            rtcdate2unixtime(struct rtcdate*);
 struct rtcdate* unixtime2rtcdate(long, struct rtcdate*);
+time_t          time(time_t*);
+int             gettimeofday(struct timeval*, void*);
 
 // timer.c
 void            timerinit(void);
@@ -198,6 +206,14 @@ void            switchkvm(void);
 int             copyout(pde_t*, uint, void*, uint);
 void            clearpteu(pde_t *pgdir, char *uva);
 
+
+// net/net.c
+void            netinit(void);
+
+// net/platform/xv6/driver/e1000.c
+int             e1000init(struct pci_func*);
+void            e1000intr(void);
+
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))
 
@@ -205,3 +221,10 @@ void            clearpteu(pde_t *pgdir, char *uva);
 #define va_start(ap, last) __builtin_va_start(ap, last)
 #define va_arg(ap, type) __builtin_va_arg(ap, type)
 #define va_end(ap) __builtin_va_end(ap)
+
+// assert
+#define _str(x) #x
+#define _tostr(x) _str(x)
+#define _assert_occurs " [" __FILE__ ":" _tostr(__LINE__) "] "
+#define assert(x) \
+        do { if (!(x)) panic("assertion failed" _assert_occurs #x); } while (0)

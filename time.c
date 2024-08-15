@@ -41,6 +41,28 @@ rtcdate2unixtime(struct rtcdate *r)
     return unixtime;
 }
 
+time_t
+time(time_t *t)
+{
+  struct rtcdate r;
+  time_t _t;
+
+  cmostime(&r);
+  if (!t)
+    t = &_t;
+  *t = (time_t)rtcdate2unixtime(&r);
+  return *t;
+}
+
+int
+gettimeofday(struct timeval *tv, void *tz)
+{
+  (void)tz;
+  tv->tv_sec = time(NULL);
+  tv->tv_usec = 0;
+  return 0;
+}
+
 struct rtcdate *
 unixtime2rtcdate(long unixtime, struct rtcdate *r)
 {   

@@ -26,4 +26,6 @@ typedef uint32_t size_t;
 
 typedef __builtin_va_list va_list;
 
+typedef long time_t;
+
 #endif

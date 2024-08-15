@@ -32,19 +32,11 @@ main(void)
   binit();         // buffer cache
   fileinit();      // file table
   ideinit();       // disk 
+  netinit();       // network stack
+  pciinit();       // pci devices
   startothers();   // start other processors
   kinit2(P2V(4*1024*1024), P2V(PHYSTOP)); // must come after startothers()
   userinit();      // first user process
-  struct rtcdate rd;
-  long unixtime;
-  cmostime(&rd);
-  cprintf("%04d/%02d/%02d %02d:%02d:%02d\n",
-    rd.year, rd.month, rd.day, rd.hour, rd.minute, rd.second);
-  unixtime = rtcdate2unixtime(&rd);
-  cprintf("unixtime: %d\n", unixtime);
-  unixtime2rtcdate(unixtime, &rd);
-  cprintf("%04d/%02d/%02d %02d:%02d:%02d\n",
-    rd.year, rd.month, rd.day, rd.hour, rd.minute, rd.second);
   mpmain();        // finish this processor's setup
 }
 

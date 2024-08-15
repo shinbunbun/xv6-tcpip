@@ -6,3 +6,8 @@ struct rtcdate {
   uint month;
   uint year;
 };
+
+struct timeval {
+  long tv_sec;
+  long tv_usec;
+};
