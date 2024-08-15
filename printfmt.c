@@ -239,6 +239,9 @@ vprintfmt(void (*putch)(int, void*), void *putdat, const char *fmt, va_list ap)
     case '%':
       putch(ch, putdat);
       break;
+    
+    case 'z':
+      goto reswitch;
 
     // unrecognized escape sequence - just print it literally
     default:

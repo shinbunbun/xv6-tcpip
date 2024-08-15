@@ -4,14 +4,18 @@
 #include "pci.h"
 
 #include "util.h"
+#include "net.h"
 
 #include "e1000_dev.h"
+
+#define PRIV(x) ((struct e1000 *)(x)->priv)
 
 #define RX_RING_SIZE 16
 #define TX_RING_SIZE 16
 
 struct e1000 {
     struct e1000 *next;
+    struct net_device *dev;
     uint32_t mmio_base;
     struct rx_desc rx_ring[RX_RING_SIZE] __attribute__((aligned(16)));;
     struct tx_desc tx_ring[TX_RING_SIZE] __attribute__((aligned(16)));;
@@ -130,8 +134,11 @@ e1000_tx_init(struct e1000 *e1000)
 }
 
 static int
-e1000_open(struct e1000 *e1000)
-{
+e1000_open(struct net_device *dev)
+ {
+    struct e1000 *e1000;
+
+    e1000 = PRIV(dev);
     // enable interrupts
     e1000_reg_write(e1000, E1000_IMS, E1000_IMS_RXT0);
     // clear existing pending interrupts
@@ -141,6 +148,30 @@ e1000_open(struct e1000 *e1000)
     e1000_reg_write(e1000, E1000_TCTL, e1000_reg_read(e1000, E1000_TCTL) | E1000_TCTL_EN);
     // link up
     e1000_reg_write(e1000, E1000_CTL, e1000_reg_read(e1000, E1000_CTL) | E1000_CTL_SLU);
+    return 0;
+}
+
+static int
+e1000_close(struct net_device *dev)
+{
+    struct e1000 *e1000;
+
+    e1000 = PRIV(dev);
+    // disable interrupts
+    e1000_reg_write(e1000, E1000_IMC, E1000_IMS_RXT0);
+    // clear existing pending interrupts
+    e1000_reg_read(e1000, E1000_ICR);
+    // disable RX/TX
+    e1000_reg_write(e1000, E1000_RCTL, e1000_reg_read(e1000, E1000_RCTL) & ~E1000_RCTL_EN);
+    e1000_reg_write(e1000, E1000_TCTL, e1000_reg_read(e1000, E1000_TCTL) & ~E1000_TCTL_EN);
+    // link down
+    e1000_reg_write(e1000, E1000_CTL, e1000_reg_read(e1000, E1000_CTL) & ~E1000_CTL_SLU);
+    return 0;
+}
+
+static ssize_t
+e1000_transmit(struct net_device *dev, uint16_t type, const uint8_t *packet, size_t len, const void *dst)
+{
     return 0;
 }
 
@@ -185,11 +216,18 @@ e1000intr(void)
     debugf("<<<");
 }
 
+struct net_device_ops e1000_ops = {
+    .open = e1000_open,
+    .close = e1000_close,
+    .transmit = e1000_transmit,
+};
+
 int
 e1000init(struct pci_func *pcif)
 {
     struct e1000 *e1000;
     uint8_t addr[6];
+    struct net_device *dev;
 
     e1000 = (struct e1000 *)memory_alloc(sizeof(*e1000));
     if (!e1000) {
@@ -206,10 +244,25 @@ e1000init(struct pci_func *pcif)
     e1000_rx_init(e1000);
     e1000_tx_init(e1000);
     e1000->irq = pcif->irq_line;
+    dev = net_device_alloc();
+    if (!dev) {
+        errorf("net_device_alloc() failure");
+        memory_free(e1000);
+        return -1;
+    }
+    memcpy(dev->addr, addr, sizeof(addr));
+    dev->priv = e1000;
+    dev->ops = &e1000_ops;
+    if (net_device_register(dev) == -1) {
+        errorf("nt_device_register() failure");
+        memory_free(dev);
+        memory_free(e1000);
+        return -1;
+    }
+    e1000->dev = dev;
     e1000->next = devices;
     devices = e1000;
     ioapicenable(e1000->irq, ncpu - 1);
-    e1000_open(e1000);
     infof("initialized, irq=%u", e1000->irq);
     return 0;
 }

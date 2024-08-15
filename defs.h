@@ -209,6 +209,9 @@ void            clearpteu(pde_t *pgdir, char *uva);
 
 // net/net.c
 void            netinit(void);
+void            netrun(void);
+int             net_softirq_handler(void);
+int             net_event_handler(void);
 
 // net/platform/xv6/driver/e1000.c
 int             e1000init(struct pci_func*);

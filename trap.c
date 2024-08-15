@@ -46,6 +46,15 @@ trap(struct trapframe *tf)
     return;
   }
 
+  if(tf->trapno == T_SOFT){
+    net_softirq_handler();
+    return;
+  }
+  if(tf->trapno == T_EVENT){
+    net_event_handler();
+    return;
+  }
+
   switch(tf->trapno){
   case T_IRQ0 + IRQ_TIMER:
     if(cpuid() == 0){

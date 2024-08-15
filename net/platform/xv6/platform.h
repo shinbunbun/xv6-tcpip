@@ -49,7 +49,33 @@ memory_free(void *ptr)
 
 #include "traps.h"
 
+#define INTR_IRQ_SOFTIRQ T_SOFT
+#define INTR_IRQ_EVENT T_EVENT
 
+static inline int
+intr_raise_irq(unsigned int irq)
+{
+    asm volatile("int %0" : : "i" (irq));
+    return 0;
+}
+
+static inline int
+intr_init(void)
+{
+    return 0;
+}
+
+static inline int
+intr_run(void)
+{
+    return 0;
+}
+
+static inline void
+intr_shutdown(void)
+{
+    return;
+}
 
 /*
  * Scheduler
