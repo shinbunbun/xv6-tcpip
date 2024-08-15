@@ -39,6 +39,7 @@ OBJS = \
 	net/ip.o\
 	net/icmp.o\
 	net/udp.o\
+	net/tcp.o\
 
 # Cross-compiling (e.g., on Mac OS X)
 # TOOLPREFIX = i386-jos-elf
