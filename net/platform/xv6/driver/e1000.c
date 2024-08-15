@@ -5,6 +5,7 @@
 
 #include "util.h"
 #include "net.h"
+#include "ether.h"
 
 #include "e1000_dev.h"
 
@@ -170,9 +171,53 @@ e1000_close(struct net_device *dev)
 }
 
 static ssize_t
+e1000_write(struct net_device *dev, const uint8_t *data, size_t len)
+{
+    struct e1000 *e1000;
+    uint32_t tail;
+    struct tx_desc *desc;
+
+    e1000 = PRIV(dev);
+    tail = e1000_reg_read(e1000, E1000_TDT);
+    desc = &e1000->tx_ring[tail];
+    desc->addr = (uint64_t)V2P(data);
+    desc->length = len;
+    desc->status = 0;
+    desc->cmd = (E1000_TXD_CMD_EOP | E1000_TXD_CMD_RS);
+    debugf("dev=%s, %u bytes data transmit", e1000->dev->name, desc->length);
+    e1000_reg_write(e1000, E1000_TDT, (tail + 1) % TX_RING_SIZE);
+    while(!(desc->status & 0x0f)) {
+        microdelay(1);
+    }
+    return len;
+}
+
+static ssize_t
 e1000_transmit(struct net_device *dev, uint16_t type, const uint8_t *packet, size_t len, const void *dst)
 {
-    return 0;
+  return ether_transmit_helper(dev, type, packet, len, dst, e1000_write);
+}
+
+static ssize_t
+e1000_read(struct net_device *dev, uint8_t *buf, size_t size)
+{
+    struct e1000 *e1000;
+    uint32_t tail;
+    struct rx_desc *desc;
+
+    e1000 = PRIV(dev);
+    tail = (e1000_reg_read(e1000, E1000_RDT)+1) % RX_RING_SIZE;
+    desc = &e1000->rx_ring[tail];
+    if (!(desc->status & E1000_RXD_STAT_EOP)) {
+        errorf("not EOP! this driver does not support packet that do not fit in one buffer");
+        return -1;
+    }
+    if (desc->errors) {
+        errorf("rx errors (0x%x)", desc->errors);
+        return -1;
+    }
+    memcpy(buf, P2V((uint32_t)desc->addr), desc->length);
+    return desc->length;
 }
 
 void
@@ -194,18 +239,7 @@ e1000intr(void)
                     /* EMPTY */
                     break;
                 }
-                do {
-                    if (!(desc->status & E1000_RXD_STAT_EOP)) {
-                        errorf("not EOP! this driver does not support packet that do not fit in one buffer");
-                        break;
-                    }
-                    if (desc->errors) {
-                        errorf("rx errors (0x%x)", desc->errors);
-                        break;
-                    }
-                    debugf("%d bytes data receive", desc->length);
-                    debugdump(P2V((uint32_t)desc->addr), desc->length);
-                } while(0);
+                ether_input_helper(e1000->dev, e1000_read);
                 desc->status = (uint16_t)(0);
                 e1000_reg_write(e1000, E1000_RDT, tail);
             }
@@ -228,6 +262,7 @@ e1000init(struct pci_func *pcif)
     struct e1000 *e1000;
     uint8_t addr[6];
     struct net_device *dev;
+    char mac[ETHER_ADDR_STR_LEN];
 
     e1000 = (struct e1000 *)memory_alloc(sizeof(*e1000));
     if (!e1000) {
@@ -237,8 +272,6 @@ e1000init(struct pci_func *pcif)
     pci_func_enable(pcif);
     e1000->mmio_base = e1000_resolve_mmio_base(pcif);
     e1000_read_addr_from_eeprom(e1000, addr);
-    debugf("addr: %02x:%02x:%02x:%02x:%02x:%02x",
-        addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]);
     for (int n = 0; n < 128; n++)
         e1000_reg_write(e1000, E1000_MTA + (n << 2), 0);
     e1000_rx_init(e1000);
@@ -250,6 +283,7 @@ e1000init(struct pci_func *pcif)
         memory_free(e1000);
         return -1;
     }
+    ether_setup_helper(dev);
     memcpy(dev->addr, addr, sizeof(addr));
     dev->priv = e1000;
     dev->ops = &e1000_ops;
@@ -263,6 +297,7 @@ e1000init(struct pci_func *pcif)
     e1000->next = devices;
     devices = e1000;
     ioapicenable(e1000->irq, ncpu - 1);
-    infof("initialized, irq=%u", e1000->irq);
+    infof("initialized, irq=%d, addr=%s",
++        e1000->irq, ether_addr_ntop(dev->addr, mac, sizeof(mac)));
     return 0;
 }

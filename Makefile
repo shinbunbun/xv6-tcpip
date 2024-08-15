@@ -34,6 +34,7 @@ OBJS = \
 	net/platform/xv6/driver/e1000.o\
 	net/util.o\
 	net/net.o\
+	net/ether.o\
 
 # Cross-compiling (e.g., on Mac OS X)
 # TOOLPREFIX = i386-jos-elf
