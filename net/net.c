@@ -329,6 +329,7 @@ net_shutdown(void)
     debugf("shutting down");
 }
 
+#include "arp.h"
 #include "ip.h"
 
 int
@@ -336,6 +337,10 @@ net_init(void)
 {
     if (intr_init() == -1) {
         errorf("intr_init() failure");
+        return -1;
+    }
+    if (arp_init() == -1) {
+        errorf("arp_init() failure");
         return -1;
     }
     if (ip_init() == -1) {
