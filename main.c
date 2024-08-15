@@ -5,6 +5,7 @@
 #include "mmu.h"
 #include "proc.h"
 #include "x86.h"
+#include "date.h"
 
 static void startothers(void);
 static void mpmain(void)  __attribute__((noreturn));
@@ -34,6 +35,16 @@ main(void)
   startothers();   // start other processors
   kinit2(P2V(4*1024*1024), P2V(PHYSTOP)); // must come after startothers()
   userinit();      // first user process
+  struct rtcdate rd;
+  long unixtime;
+  cmostime(&rd);
+  cprintf("%04d/%02d/%02d %02d:%02d:%02d\n",
+    rd.year, rd.month, rd.day, rd.hour, rd.minute, rd.second);
+  unixtime = rtcdate2unixtime(&rd);
+  cprintf("unixtime: %d\n", unixtime);
+  unixtime2rtcdate(unixtime, &rd);
+  cprintf("%04d/%02d/%02d %02d:%02d:%02d\n",
+    rd.year, rd.month, rd.day, rd.hour, rd.minute, rd.second);
   mpmain();        // finish this processor's setup
 }
 
@@ -113,4 +124,3 @@ pde_t entrypgdir[NPDENTRIES] = {
 // Blank page.
 //PAGEBREAK!
 // Blank page.
-

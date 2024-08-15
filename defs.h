@@ -18,7 +18,8 @@ void            bwrite(struct buf*);
 
 // console.c
 void            consoleinit(void);
-void            cprintf(char*, ...);
+int             vcprintf(const char*, va_list);
+int             cprintf(const char*, ...);
 void            consoleintr(int(*)(void));
 void            panic(char*) __attribute__((noreturn));
 
@@ -101,6 +102,12 @@ void            pipeclose(struct pipe*, int);
 int             piperead(struct pipe*, char*, int);
 int             pipewrite(struct pipe*, char*, int);
 
+// printfmt.c
+void            vprintfmt(void (*)(int, void*), void*, const char*, va_list);
+void            printfmt(void (*)(int, void*), void*, const char*, ...);
+int             vsnprintf(char*, int, const char*, va_list);
+int             snprintf(char*, int, const char*, ...);
+
 //PAGEBREAK: 16
 // proc.c
 int             cpuid(void);
@@ -147,6 +154,7 @@ char*           safestrcpy(char*, const char*, int);
 int             strlen(const char*);
 int             strncmp(const char*, const char*, uint);
 char*           strncpy(char*, const char*, int);
+int             strnlen(const char*, uint);
 
 // syscall.c
 int             argint(int, int*);
@@ -155,6 +163,10 @@ int             argstr(int, char**);
 int             fetchint(uint, int*);
 int             fetchstr(uint, char**);
 void            syscall(void);
+
+// time.c
+long            rtcdate2unixtime(struct rtcdate*);
+struct rtcdate* unixtime2rtcdate(long, struct rtcdate*);
 
 // timer.c
 void            timerinit(void);
@@ -188,3 +200,8 @@ void            clearpteu(pde_t *pgdir, char *uva);
 
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))
+
+// variable length arguments
+#define va_start(ap, last) __builtin_va_start(ap, last)
+#define va_arg(ap, type) __builtin_va_arg(ap, type)
+#define va_end(ap) __builtin_va_end(ap)
