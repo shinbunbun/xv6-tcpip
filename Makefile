@@ -35,6 +35,7 @@ OBJS = \
 	net/util.o\
 	net/net.o\
 	net/ether.o\
+	net/ip.o\
 
 # Cross-compiling (e.g., on Mac OS X)
 # TOOLPREFIX = i386-jos-elf

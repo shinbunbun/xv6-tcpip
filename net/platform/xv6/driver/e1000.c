@@ -256,6 +256,8 @@ struct net_device_ops e1000_ops = {
     .transmit = e1000_transmit,
 };
 
+#include "ip.h"
+
 int
 e1000init(struct pci_func *pcif)
 {
@@ -298,6 +300,16 @@ e1000init(struct pci_func *pcif)
     devices = e1000;
     ioapicenable(e1000->irq, ncpu - 1);
     infof("initialized, irq=%d, addr=%s",
-+        e1000->irq, ether_addr_ntop(dev->addr, mac, sizeof(mac)));
+        e1000->irq, ether_addr_ntop(dev->addr, mac, sizeof(mac)));
+    struct ip_iface *iface;
+    iface = ip_iface_alloc("192.0.2.2", "255.255.255.0");
+    if (!iface) {
+        errorf("ip_iface_alloc() failure");
+        return -1;
+    }
+    if (ip_iface_register(dev, iface) == -1) {
+        errorf("ip_iface_register() failure");
+        return -1;
+    }
     return 0;
 }
